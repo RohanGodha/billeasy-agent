@@ -757,6 +757,11 @@ annotated [`.env.example`](.env.example) at the repo root):
 GROQ_API_KEY=...          # free tier → https://console.groq.com   (takes ~1 min)
 ```
 
+**Get a free key (~1 min):** [console.groq.com](https://console.groq.com) → **API Keys** →
+**Create API Key** → copy it into `backend/.env` in place of `...`. Daily free credits are
+generous; the key lives only in the gitignored `backend/.env`, never in the repository, and
+can be revoked anytime from the same page.
+
 With no other keys, both routes fall through to Groq, so the full agent works end to end —
 planning, introspection, WhatsApp drafting. `/status` and the UI top bar show which
 providers are live.
