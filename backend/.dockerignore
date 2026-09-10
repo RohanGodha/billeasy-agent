@@ -1,0 +1,28 @@
+# Keep the image lean and free of runtime artifacts.
+# At runtime SQLITE_PATH=/data/app.db (Render mounted disk), so the DB is
+# created + seeded on first boot — we never want a stale DB baked into the image.
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Runtime data (recreated on boot via bootstrap())
+data/app.db
+data/app.db-shm
+data/app.db-wal
+data/app.db-journal
+data/chroma/
+data/exports/
+data/runtime/
+
+# Local junk
+*.log
+uvicorn*.log
+uvicorn*.err
+.env
+tests/
+.git/

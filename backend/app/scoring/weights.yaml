@@ -1,0 +1,93 @@
+# Transparent weights for the heuristic scorers.
+# Tune these without touching code. Values are documented in docs/ai-patterns.md.
+
+value:
+  # Each weight applies to a z-scored feature. Sum need not equal 1; the
+  # composite is normalised in code.
+  tpv_z:            0.40
+  digital_share_z:  0.30
+  tenure_z:         0.20
+  txn_velocity_z:   0.10
+
+propensity:
+  # Per-module propensity weights, keyed by Billeasy module id.
+  MOD-RECON:
+    settlement_mismatch_rate:   0.30
+    void_reissue_rate:          0.25
+    cash_share_spike:           0.20
+    no_recon_module:            0.15
+    transit_counter_fit:        0.10
+
+  MOD-OFFLINE:
+    peak_hour_downtime:         0.35
+    txn_velocity:               0.20
+    receipt_issuance_gap:       0.20
+    no_existing_module_bonus:   0.15
+    tpv_above_2l:               0.10
+
+  MOD-ETICKET:
+    transit_counter_fit:        0.30
+    no_eticket_module:          0.25
+    txn_velocity:               0.20
+    ncmc_share:                -0.15    # already on NCMC = less upside
+    tpv_above_5l:               0.10
+
+  MOD-BILLING:
+    receipt_issuance_gap:       0.30
+    gst_threshold_crossed:      0.30
+    retail_counter_fit:         0.20
+    no_existing_module_bonus:   0.20
+
+  MOD-LOYALTY:
+    retail_counter_fit:         0.25
+    no_loyalty_module:          0.25
+    txn_velocity:               0.20
+    digital_share_trend:        0.15
+    tpv_above_5l:               0.15
+
+  MOD-WA-RECEIPT:
+    # The trigger for this module is an actual receipt gap, so it has to dominate.
+    # Weighted evenly against size/velocity, a big busy counter scored ~0.87 here on
+    # free points alone and outranked reconciliation on a counter losing fares.
+    receipt_issuance_gap:       0.45
+    no_existing_module_bonus:   0.20
+    txn_velocity:               0.15
+    tpv_above_2l:               0.10
+    retail_counter_fit:         0.10
+
+  MOD-QR:
+    cash_share_spike:           0.35
+    digital_share_trend:       -0.20    # already digital = less upside
+    no_existing_module_bonus:   0.25
+    tpv_above_2l:               0.20
+
+  MOD-ANALYTICS:
+    tpv_above_10l:              0.30
+    txn_velocity:               0.20
+    tenure_long:                0.20
+    no_existing_module_bonus:   0.15
+    # Analytics is a growth product. A counter with an open leak needs remediation,
+    # not another dashboard — without these two terms every large, tenured counter
+    # scores ~0.92 here and analytics outranks reconciliation on a counter that is
+    # actively losing fares.
+    settlement_mismatch_rate:  -0.30
+    cash_share_spike:          -0.25
+
+leakage:
+  # Revenue-leakage risk (app/scoring/leakage.py). Unlike the blocks above this is a
+  # plain weighted sum over features already in [0,1], and these weights sum to 1.0 —
+  # so the score reads directly as "share of the maximum leakage evidence available".
+  # Keep the sum at 1.0 when re-tuning, or the 0-1 reading stops being honest.
+  #
+  # Ordering reflects how conclusive each signal is. A settlement mismatch is measured
+  # money that did not arrive. A cash-share spike or a void-and-reissue pattern is
+  # strong circumstantial evidence. A complaint in a field note is corroboration, not
+  # evidence, so it is weighted low on purpose.
+  settlement_mismatch_rate:     0.27
+  cash_share_spike:             0.23
+  void_reissue_rate:            0.21
+  receipt_issuance_gap:         0.12
+  peak_hour_downtime:           0.08
+  pending_settlement_backlog:   0.04
+  field_note_stress_signal:     0.03
+  refund_ratio:                 0.02

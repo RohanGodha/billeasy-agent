@@ -1,0 +1,45 @@
+# Counter Copilot — every counter, accounted for.
+# Local dev: brings up backend (FastAPI) + frontend (Vite dev server).
+# In production we use Render (backend) + Vercel (frontend).
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: counter-copilot-backend:dev
+    container_name: counter-copilot-backend
+    environment:
+      APP_ENV: development
+      APP_PASSWORD: ${APP_PASSWORD:-shared}
+      APP_CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      LOG_LEVEL: INFO
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY:   ${GROQ_API_KEY:-}
+      DATABRICKS_HOST: ${DATABRICKS_HOST:-}
+      DATABRICKS_HTTP_PATH: ${DATABRICKS_HTTP_PATH:-}
+      DATABRICKS_TOKEN: ${DATABRICKS_TOKEN:-}
+      SQLITE_PATH: /data/app.db
+      CHROMA_DIR:  /data/chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - counter-copilot-data:/data
+    restart: unless-stopped
+
+  frontend:
+    image: node:20-alpine
+    container_name: counter-copilot-frontend
+    working_dir: /app
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+    command: sh -c "npm install --silent && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  counter-copilot-data:

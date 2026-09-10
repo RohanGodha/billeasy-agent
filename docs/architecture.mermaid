@@ -1,0 +1,84 @@
+%% Counter Copilot — architecture
+%% Render with the Mermaid CLI or any Markdown viewer that supports Mermaid.
+%% mmdc -i docs/architecture.mermaid -o docs/architecture.png
+
+flowchart LR
+    subgraph "Client (Vercel)"
+        UI[React + Vite + Tailwind]
+        Login[/Login: password gate/]
+        Dash[/Dashboard: 3-pane workspace/]
+        SSE>"@microsoft/fetch-event-source"]
+        UI --> Login --> Dash
+        Dash -- "SSE + X-Access-Token" --> SSE
+    end
+
+    subgraph "Backend (Render Web Service)"
+        Auth[Auth middleware]
+        Chat[/POST /chat/stream/]
+        Trace[/GET /trace/:id/]
+        Tools[/GET /tools/]
+        Counters[/GET /counters/:id/]
+        Knowledge[/POST /knowledge/ask/]
+        Health[/GET /healthz/]
+        SSE --> Auth --> Chat
+        Chat --> Orchestrator
+        subgraph "Agent DAG"
+            Intent[Intent router]
+            Planner --> Executor
+            Executor --> Critic
+            Critic -- "replan" --> Executor
+            Critic --> Synth
+            Synth --> MsgGen
+            MsgGen --> Resp
+            Resp --> Chat
+        end
+        Orchestrator --> Intent --> Planner
+        Intent -- "knowledge" --> KB[Knowledge base BM25]
+        Intent -- "faq / chitchat" --> Resp
+    end
+
+    subgraph "Scoring (YAML-tuned, explainable)"
+        Value[value.py<br/>tpv / digital share / tenure / velocity]
+        Prop[propensity.py<br/>~25 features, per module]
+        Leak[leakage.py<br/>weighted sum = 1.0<br/>clear / watch / elevated / severe]
+        Comp[compliance.py<br/>numeric grounding validator]
+        Executor --> Value
+        Executor --> Prop
+        Synth --> Leak
+        MsgGen --> Comp
+    end
+
+    subgraph "Infra ports + adapters"
+        DS[DataSource port]
+        LLM[LLMClient port]
+        RAG[Hybrid Retriever]
+        Cache[(SQLite tool_cache)]
+        Executor --> DS
+        Executor --> RAG
+        Planner -.-> LLM
+        Critic -.-> LLM
+        Synth -.-> LLM
+        MsgGen -.-> LLM
+        Resp --> Cache
+    end
+
+    subgraph "External (free tier)"
+        DBX[(Databricks Delta)]
+        SQL[(SQLite WAL<br/>500 counters, ~15k txns)]
+        Chroma[(Chroma embeddings)]
+        Claude[Anthropic Claude]
+        Gemini[Gemini 2.0 Flash]
+        Groq[Groq Llama 3.3 70B]
+        Mock[Mock LLM offline]
+    end
+
+    DS -- "primary, 5s timeout" --> DBX
+    DS -- "failover, breaker 60s" --> SQL
+    RAG --> Chroma
+    LLM -- "reasoning (1st)" --> Claude
+    LLM -- "reasoning (2nd) / embeddings" --> Gemini
+    LLM -- "generation fanout (1st)" --> Groq
+    LLM -- "no-key fallback" --> Mock
+
+    Resp --> Trace
+    Health -.-> Self[(Self-ping keep-alive)]

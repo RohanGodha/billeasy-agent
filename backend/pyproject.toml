@@ -1,0 +1,17 @@
+[project]
+name = "counter-copilot"
+version = "0.1.0"
+description = "Counter Copilot — agentic revenue-assurance and settlement copilot for Billeasy Area Partner Managers: detects revenue leakage across retail POS outlets and transit ticketing counters and drafts compliant supervisor outreach."
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP", "C4"]
+ignore = ["E501", "B008"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

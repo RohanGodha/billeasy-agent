@@ -1,0 +1,51 @@
+# Counter Copilot — backend CI (lint + offline mock-LLM agent E2E).
+name: backend-ci
+
+on:
+  push:
+    branches: [main]
+    paths: ['backend/**', '.github/workflows/backend-ci.yml']
+  pull_request:
+    paths: ['backend/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+      - name: Lint
+        run: ruff check app
+      # The whole suite, not a subset. CI previously ran only smoke + e2e, so the
+      # routing, knowledge-base, security and compliance tests could rot unnoticed —
+      # which is how a vacuous compliance assertion survived in the first place.
+      # All of these run keyless against the deterministic mock provider.
+      - name: Test suite (mock LLM, no API keys)
+        env:
+          PYTHONPATH: .
+          PYTHONIOENCODING: utf-8
+        run: |
+          python tests/test_smoke.py
+          python tests/test_agent_e2e.py
+          python tests/test_faq_routing.py
+          python tests/test_sentiment_lang.py
+          python tests/test_knowledge_base.py
+          python tests/test_compliance.py
+          python tests/test_ranking.py
+          python tests/test_security.py
+          python tests/test_tool_cache.py
+          python tests/test_critic.py
+          python tests/test_commands.py
+          python tests/test_sessions.py
+          python tests/test_telemetry.py
+          python tests/test_rocchio.py
+          python tests/test_solution_areas.py

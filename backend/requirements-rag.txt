@@ -1,0 +1,10 @@
+# ---------------------------------------------------------------------------
+# Optional: full dense + BM25 hybrid RAG with persistent Chroma vector store.
+# Install on top of requirements.txt:   pip install -r requirements-rag.txt
+#
+# Not installed on the Render free tier by default because chromadb pulls
+# onnxruntime which can exceed the 512 MB runtime budget. Locally it gives the
+# full hybrid retrieval (dense embeddings + BM25 + RRF + MMR). Without it the
+# HybridRetriever transparently falls back to BM25-only.
+# ---------------------------------------------------------------------------
+chromadb==0.5.20

@@ -1,0 +1,47 @@
+# Counter Copilot — every counter, accounted for.
+# Render blueprint — deploys the backend as a free Web Service with a 1 GB persistent disk.
+# The frontend is deployed to Vercel separately (see frontend/vercel.json).
+
+services:
+  - type: web
+    name: counter-copilot
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_PASSWORD
+        sync: false        # set in dashboard
+      - key: APP_CORS_ORIGINS
+        sync: false        # e.g. https://counter-copilot.vercel.app
+      - key: LOG_LEVEL
+        value: INFO
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DATABRICKS_HOST
+        sync: false
+      - key: DATABRICKS_HTTP_PATH
+        sync: false
+      - key: DATABRICKS_TOKEN
+        sync: false
+      # Free tier has an EPHEMERAL filesystem (no persistent disk on free plan).
+      # That's fine: bootstrap() reseeds the deterministic counter network on each
+      # boot (Faker.seed(7)). Only runtime artefacts (sessions/traces/drafts)
+      # reset on restart — acceptable for a demo. Upgrade to a paid instance +
+      # disk mounted at /data to persist them.
+      - key: SQLITE_PATH
+        value: /app/data/app.db
+      - key: CHROMA_DIR
+        value: /app/data/chroma
+      - key: SELF_PING_URL
+        sync: false        # e.g. https://counter-copilot.onrender.com/healthz
+      - key: SELF_PING_INTERVAL_SECONDS
+        value: "600"
